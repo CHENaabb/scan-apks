@@ -1,0 +1,64 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>scan-apks</title>
+</head>
+<script>
+    let record = [];
+    (function fetchData() {
+        // 这里替换为你的API URL
+        const apiUrl = location.origin + `/view?n=${location.href}`;
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("HTTP error " + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                let content = '';
+                data.forEach(element => {
+                    content += "<a href='/download?n=" + element.title + "'> " + element.title + "</a><br/>";
+                    content += element.svg + "<br/>";
+                });
+                document.getElementById("qr-code").innerHTML = "<div> " + content + "</div>";
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+    })();
+    function getRecord() {
+        // 这里替换为你的API URL
+        const apiUrl = location.origin + `/record`;
+        fetch(apiUrl)
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error("HTTP error " + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (JSON.stringify(record) !== JSON.stringify(data)) {
+                    record = data;
+                    let content = '';
+                    data.forEach(element => {
+                        content += element + "<br/>";
+                    });
+                    document.getElementById("record").innerHTML = "<div> " + content + "</div>";
+                }
+            })
+    }
+    (function Interval() {
+        setInterval(getRecord, 1000);
+    })();
+</script>
+
+<body>
+    <div id='qr-code'></div>
+    <div id='record'></div>
+</body>
+
+</html>
