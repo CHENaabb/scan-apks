@@ -1,9 +1,11 @@
 {
   "name": "scan-apks",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
-  "bin": "./index.js",
+  "bin": {
+    "scan-apks": "index.js"
+  },
   "scripts": {
     "start": "set PLATFORM=local& node ./index.js",
     "s": "set PLATFORM=local& node ./index.js",
