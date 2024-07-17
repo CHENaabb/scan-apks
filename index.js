@@ -16,7 +16,7 @@ async function nodeFindKeys() {
     // const spinner = ora.default('Loading').start();
     const dirPath = path.resolve(currentDir, '..');
     const apkFiles = await findAPKsAsync(dirPath);
-
+    console.log(apkFiles,' files');
     apkFiles?.forEach(async (file) => {
         const downloadUrl = ip + "download?n=" + file;
         const filename = file.split("\\").pop();

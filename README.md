@@ -1,4 +1,7 @@
 # scan-apks
+工具类
+
+[github repository](https://github.com/CHENaabb/scan-apks)
 
 ## Introduce
 方便手机端直接扫码下载apk

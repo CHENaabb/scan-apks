@@ -12,9 +12,14 @@
     "pkg": "pkg . -t node16-win-x64 --out-path=dist/ --public --no-bytecode ",
     "pkg:macos": "pkg . -t node16-macos-x64 --out-path=dist/ --public --no-bytecode "
   },
-  "keywords": [],
+  "keywords": [
+    "scan",
+    "apk",
+    "scan-apks"
+  ],
   "author": "CHENaabb",
   "license": "ISC",
+  "repository": "https://github.com/CHENaabb/scan-apks",
   "dependencies": {
     "express": "^4.19.2",
     "ora": "^8.0.1",
