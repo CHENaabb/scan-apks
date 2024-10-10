@@ -1,22 +1,22 @@
 const express = require('express');
 const path = require('path');
-const app = express();
-const port = 3010;
 const qr = require('qrcode');
 const os = require('os');
 const qrCodeTerminal = require('qrcode-terminal');
 const fs = require('fs');
 const fsP = fs.promises;
 
+const port = 3010;
 const local = process.env.PLATFORM === 'local';
 const currentDir = path.resolve(local ? __dirname : process.execPath);
+
 async function nodeFindKeys() {
     console.log('loading...');
     // const ora = await import('ora');
     // const spinner = ora.default('Loading').start();
     const dirPath = path.resolve(currentDir, '..');
     const apkFiles = await findAPKsAsync(dirPath);
-    console.log(apkFiles,' files');
+    console.log(apkFiles, ' files');
     apkFiles?.forEach(async (file) => {
         const downloadUrl = ip + "download?n=" + file;
         const filename = file.split("\\").pop();
@@ -95,77 +95,84 @@ function updateRecord(record) {
 
 let ip = '';
 let downloadRecord = [];
-// 设置下载路由
-app.get('/download', (req, res) => {
+class Server {
+    start() {
+        const app = express();
+        app.get('/download', (req, res) => {
+            let filename = req.query.n;
+            filename = filename.replace(/\\/g, '/');
+            const name =   filename.split("/").pop();
+            let dirPath = path.resolve(currentDir, '..');
+            dirPath = dirPath.replace(/\\/g, '/');
+            // 必须是当前目录下的文件
+            if (!filename.includes(dirPath) || !filename.includes('.apk')) {
+                res.status(403).send('无效路径');
+                return;
+            }
+            // 检查文件是否存在
+            if (!fs.existsSync(filename)) {
+                res.status(404).send('File not found');
+                return;
+            }
 
-    const filename = req.query.n;
-    const name = filename.split("\\").pop();
-    const dirPath = path.resolve(currentDir, '..');
-
-    // 必须是当前目录下的文件
-    if (!filename.includes(dirPath) || !filename.includes('.apk')) {
-        res.status(403).send('无效路径');
-        return;
-    }
-    // 检查文件是否存在
-    if (!fs.existsSync(filename)) {
-        res.status(404).send('File not found');
-        return;
-    }
-
-    // 设置响应头
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename=' + name);
-    // 发送文件
-    res.download(filename, (err) => {
-        if (err) {
-            console.log(err.name, err.message);
-            updateRecord(`${err.name}${err.message}`)
-            // res.status(500).send('Error while downloading file');
-        } else {
-            // const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-            console.log(req.socket.remoteAddress + '🐎' + filename, new Date().toLocaleString());
-            updateRecord(req.socket.remoteAddress + '🐎' + filename, new Date().toLocaleString())
-        }
-    });
+            // 设置响应头
+            res.setHeader('Content-Type', 'application/octet-stream');
+            res.setHeader('Content-Disposition', 'attachment; filename=' + name);
+            // 发送文件
+            res.download(filename, (err) => {
+                if (err) {
+                    console.log(err.name, err.message);
+                    updateRecord(`${err.name}${err.message}`)
+                    // res.status(500).send('Error while downloading file');
+                } else {
+                    // const clientIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+                    console.log(req.socket.remoteAddress + '🐎' + filename, new Date().toLocaleString());
+                    updateRecord(req.socket.remoteAddress + '🐎' + filename, new Date().toLocaleString())
+                }
+            });
 
 
-});
-app.get('/', (req, res) => {
-    if (local) {
-        res.sendFile(path.join(currentDir, 'src', 'index.html'));
-    } else {
-        res.status(202).send('hi!');
-    }
-});
-app.get('/view', async (req, res) => {
-    // 获取当前目录的上一级目录路径
-    const dirPath = path.resolve(currentDir, '..');
-    const apkFiles = await findAPKsAsync(dirPath);
-    const data = apkFiles?.map((file) => {
-        const downloadUrl = req.query.n + "download?n=" + file;
-        console.log(downloadUrl);
-        const svg = qr.toString(downloadUrl, { type: 'svg', width: 140, height: 140 }, (err, svg) => {
-            if (err) throw err;
-            return svg
         });
-        return { title: file, svg }
-    })
+        app.get('/', (req, res) => {
+            if (local) {
+                res.sendFile(join(currentDir, 'src', 'index.html'));
+            } else {
+                res.status(202).send('hi!');
+            }
+        });
+        app.get('/view', async (req, res) => {
+            // 获取当前目录的上一级目录路径
+            const dirPath = path.resolve(currentDir, '..');
+            const apkFiles = await findAPKsAsync(dirPath);
+            const data = apkFiles?.map((file) => {
+                const downloadUrl = req.query.n + "download?n=" + file;
+                console.log(downloadUrl);
+                const svg = qr.toString(downloadUrl, { type: 'svg', width: 140, height: 140 }, (err, svg) => {
+                    if (err) throw err;
+                    return svg
+                });
+                return { title: file, svg }
+            })
 
-    res.send(data);
+            res.send(data);
 
-});
+        });
 
-app.get('/record', async (req, res) => {
-    res.send(downloadRecord);
-});
-// 启动
-app.listen(port, async () => {
-    console.log(`Server is running on port ${port}`);
-    ip = 'http://' + getIP() + ':' + port + '/';
-    try {
-        await nodeFindKeys()
-    } catch (error) {
-        console.log(error);
+        app.get('/record', async (req, res) => {
+            res.send(downloadRecord);
+        });
+        // 启动
+        app.listen(port, async () => {
+            console.log(`Server is running on port ${port}`);
+            ip = 'http://' + getIP() + ':' + port + '/';
+            try {
+                await nodeFindKeys()
+            } catch (error) {
+                console.log(error);
+            }
+        });
     }
-});
+}
+const server = new Server();
+
+module.exports = { server };
